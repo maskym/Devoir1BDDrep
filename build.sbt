@@ -1,4 +1,4 @@
-name := "test2"
+name := "Devoir1BDDrep"
 
 version := "0.1"
 
