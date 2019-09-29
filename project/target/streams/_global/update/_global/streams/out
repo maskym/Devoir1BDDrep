@@ -1,3 +1,3 @@
-[debug] "not up to date. inChanged = false, force = false
-[debug] Updating ProjectRef(uri("file:/C:/Users/maxim/IdeaProjects/test2/project/"), "test2-build")...
-[debug] Done updating ProjectRef(uri("file:/C:/Users/maxim/IdeaProjects/test2/project/"), "test2-build")
+[debug] "not up to date. inChanged = true, force = false
+[debug] Updating ProjectRef(uri("file:/C:/Users/Gab/IdeaProjects/Devoir1BDDrep/project/"), "devoir1bddrep-build")...
+[debug] Done updating ProjectRef(uri("file:/C:/Users/Gab/IdeaProjects/Devoir1BDDrep/project/"), "devoir1bddrep-build")
