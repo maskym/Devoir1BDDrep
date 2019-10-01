@@ -1,40 +1,28 @@
 import scala.io.Source
-import java.io.PrintWriter
 import util.control.Breaks._
 
 /*
+Crawler de spells, créant un objet Spell(nom, level, composantes, description)
 Spells allant de 1 à 1975 sur http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=
-
-Remarques d'exécution :
-
-- pb pour récupérer SPELL LEVEL CLASS NAME sort 1652 : le mot Casting est dans le nom du sort
-
-- spell 1593 ????
-
-- spell 1841 et 1972 n'existe pas !!!!
-
  */
 object MainObj extends App {
 
-   new PrintWriter("spells.txt") {
-    for (i <- 1 to 1975) {
-      breakable {
-        val html = Source.fromURL("http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=" + i)
-        val s = html.mkString
-        var spell = new Spell(s)
-        if(spell.content!="") {
-          println(spell.name + "\n" + spell.spell_level.class_name + "\n" + spell.component + "\n" + spell.description + "\n\n")
-        }
+  val listeSpells =  new Array[Spell](1985)
+  for (i <- 1 to 1975) {
+    breakable {
+      val html = Source.fromURL("http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=" + i)
+      val s = html.mkString
+      var spell = new Spell(s)
+      if(spell.content!="") { // Si la page du sort est vide
+        listeSpells(i)= spell
       }
     }
-    close()
   }
-
 }
 
 
 class Spell(spellString:String, var content:String = "none", var name: String = "none",
-            var spell_level:SpellLevel = new SpellLevel, var component: String = "none",
+            var level:String = "none", var component: String = "none",
             var description:String = "none") {
 
   def get_content():Boolean={
@@ -49,9 +37,8 @@ class Spell(spellString:String, var content:String = "none", var name: String = 
     name
   }
 
-  def get_level():SpellLevel={
-    var level:SpellLevel = new SpellLevel
-    level.class_name = content.substring(content.indexOf("Level")+10,content.lastIndexOf("Casting")-55)
+  def get_level()={
+    level = content.substring(content.indexOf("Level")+10,content.lastIndexOf("Casting")-55)
     level
   }
 
@@ -66,15 +53,10 @@ class Spell(spellString:String, var content:String = "none", var name: String = 
   }
 
   get_content()
-  if(content!=""){
+  if(content!=""){ // Si la page du sort est vide
     name = get_name()
-    spell_level = get_level()
+    level = get_level()
     component = get_component()
     description = get_description()
   }
-
-}
-class SpellLevel {
-  var class_name:String="none"
-  var class_level:Integer=1
 }
