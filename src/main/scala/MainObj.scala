@@ -1,24 +1,31 @@
 import scala.io.Source
 import java.io.PrintWriter
+import util.control.Breaks._
+
 /*
 Spells allant de 1 à 1975 sur http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=
 
 Remarques d'exécution :
-- pb pour récupérer DESCRIPTION sort 92 : se termine par un </table></p></div> et non un .</p></div>
-----> DESCRIPTION non testée pour tous les sorts après 92
 
 - pb pour récupérer SPELL LEVEL CLASS NAME sort 1652 : le mot Casting est dans le nom du sort
 
+- spell 1593 ????
+
+- spell 1841 et 1972 n'existe pas !!!!
 
  */
 object MainObj extends App {
 
    new PrintWriter("spells.txt") {
-    for (i <- 1650 to 1652) {
-      val html = Source.fromURL("http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=" + i)
-      val s = html.mkString
-      var spell = new Spell(s)
-      println(spell.name + "\n" + spell.spell_level.class_name + "\n" + spell.component + "\n\n")
+    for (i <- 1 to 1975) {
+      breakable {
+        val html = Source.fromURL("http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=" + i)
+        val s = html.mkString
+        var spell = new Spell(s)
+        if(spell.content!="") {
+          println(spell.name + "\n" + spell.spell_level.class_name + "\n" + spell.component + "\n" + spell.description + "\n\n")
+        }
+      }
     }
     close()
   }
@@ -30,9 +37,11 @@ class Spell(spellString:String, var content:String = "none", var name: String = 
             var spell_level:SpellLevel = new SpellLevel, var component: String = "none",
             var description:String = "none") {
 
-  def get_content()={
+  def get_content():Boolean={
+    val indexOf1 =spellString.indexOf("<!-- START Spell -->")
+    if(indexOf1 == -1) { content=""; return false }
     content=spellString.substring(spellString.indexOf("<!-- START Spell -->"),spellString.indexOf("<!-- END Spell -->"))
-    content
+    true
   }
 
   def get_name()={
@@ -42,7 +51,7 @@ class Spell(spellString:String, var content:String = "none", var name: String = 
 
   def get_level():SpellLevel={
     var level:SpellLevel = new SpellLevel
-    level.class_name = content.substring(content.indexOf("Level")+10,content.indexOf("Casting")-22)
+    level.class_name = content.substring(content.indexOf("Level")+10,content.lastIndexOf("Casting")-55)
     level
   }
 
@@ -52,17 +61,17 @@ class Spell(spellString:String, var content:String = "none", var name: String = 
   }
 
   def get_description() ={
-    description = content.substring(content.indexOf("SPDesc")+11,content.indexOf(".</p></div>"))
+    description = content.substring(content.indexOf("SPDesc")+11,content.lastIndexOf("</p></div>"))
     description
   }
 
-
-
-  content = get_content()
-  name = get_name()
-  //spell_level = get_level()
-  component = get_component()
-  //description = get_description()
+  get_content()
+  if(content!=""){
+    name = get_name()
+    spell_level = get_level()
+    component = get_component()
+    description = get_description()
+  }
 
 }
 class SpellLevel {
