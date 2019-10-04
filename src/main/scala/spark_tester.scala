@@ -1,6 +1,8 @@
+import com.twitter.chill.Tuple2Serializer
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 object spark_tester extends App {
@@ -9,59 +11,61 @@ object spark_tester extends App {
     .setMaster("local[*]")
   val sc = new SparkContext(conf)
   sc.setLogLevel("ERROR")
-  //val inputfile = sc.textFile("input.txt")
+
   val classes_list = Array("cleric/oracle","witch","inquisitor","druid","sorcerer/wizard")
-  val listSpells = new Array[Spell](2)
-  var html = Source.fromURL("http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=201")
-  var s = html.mkString
-  listSpells(0) = new Spell(s)
-  html = Source.fromURL("http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID=202")
-  s = html.mkString
-  listSpells(1) = new Spell(s)
+  val listSpells = get_n_spells(2,200)
+
+  val v1 = listSpells.toArray.map(current_spell => {
+  val levelwords = current_spell.level.split(" |, ")
+  var array_levels = levelSTR_toArray(levelwords)
+  var levels_list = new ListBuffer[Tuple2[String, Int]]
 
 
-  //var z = Array("Zara", "Nuha", "Ayan","Zara","Zara")
-  val v1 = listSpells.flatMap(current_spell => {
-    var templFlatMap = current_spell.level.split(" |,")
-    var spell_class:String="";
-    var level:Integer = 0;
-    var resultats= new List();
-    for(i <- 0 to templFlatMap.size){
-      if(templFlatMap(i)!="") {
-        if(level == 0 || spell_class == ""){
-          try {
-            level = Integer.parseInt(templFlatMap(i))
-          } catch {
-            case exception: Exception =>
-              if(templFlatMap(i).length >= 1){
-                spell_class = templFlatMap(i)
-              }
-          }
-        }else{
-          resultat = new Tuple2(spell_class,level)
-        }
+    var testing = 0
+  })
 
-      }
-    }
-    var str:String=""
-    st1
-  }  )
-  //println("v1 : "+v1(0))
-
-  /*val v1 = inputfile.flatMap(line => line.split(" "))
-  val v1collect = v1.collect();
-  val v2 = v1.map(word => (word, 1))
-  val v2collect = v2.collect()
-  val counts = v2.reduceByKey(_+_)
-  val countscollect = counts.collect()*/
   val test=0
 
+  @throws(classOf[Exception])
+  def levelSTR_toArray(arg:Array[String])={
+    var list_levels = new ListBuffer[(String, Integer)]
+    var current_string:String = new String("")
+    var current_num:Integer = 0
+    for(i <- arg.indices){
+      try{
+        current_num = Integer.parseInt(arg(i))
+      }catch {
+        case exception: Exception => {
+          if(current_string==""){
+            current_string = new String(arg(i))
+          }else{
+            throw new Exception("error in input : two string level in a row")
+          }
+        }
+      }finally {
+        if(current_string != "" && current_num != 0){
+          var current_spell:(String,Integer) = new Tuple2[String,Integer](current_string,current_num)
+          list_levels+=current_spell
+          current_string = ""
+          current_num=0
+        }
+      }
+    }
+    list_levels
+  }
+
+  def get_n_spells(n:Integer,first_id:Integer)={
+    var listSpells = new ListBuffer[Spell]
+    val url_base = "http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID="
+    for(i <- first_id.toInt to (first_id+n) ){
+      var html = Source.fromURL(url_base+(first_id+i))
+      var s = html.mkString
+      listSpells+=(new Spell(s))
+    }
+    println(listSpells.toString())
+    listSpells
+  }
 }
-
-
-
-
-
 
 
 
