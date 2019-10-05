@@ -10,19 +10,12 @@ object MainObj extends  App {
   val sc = new SparkContext(conf)
   sc.setLogLevel("ERROR")
 
-  val classes_list = Array("cleric/oracle","witch","inquisitor","druid","sorcerer/wizard")
-  val listSpells = get_n_spells(2,200)
+  val listSpells = get_n_spells(2,200)    // Get n (first param) +1 spell from ID 'first_id'
 
-  val v1 = listSpells.toArray.map(current_spell => {
+  var array_level = listSpells.toArray.map(current_spell => {
     val levelwords = current_spell.level.split(" |, ")
-    var array_levels = levelSTR_toArray(levelwords)
-    var levels_list = new ListBuffer[Tuple2[String, Int]]
-
-
-    var testing = 0
+    levelSTR_toArray(levelwords)
   })
-
-  val test=0
 
   @throws(classOf[Exception])
   def levelSTR_toArray(arg:Array[String])={
