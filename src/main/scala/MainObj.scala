@@ -49,7 +49,7 @@ object MainObj extends  App {
   def get_n_spells(n:Integer,first_id:Integer)={
     var listSpells = new ListBuffer[Spell]
     val url_base = "http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID="
-    for(i <- first_id.toInt to (first_id+n) ){
+    for(i <- first_id.toInt until (first_id+n) ){
       var html = Source.fromURL(url_base+(first_id+i))
       var s = html.mkString
       listSpells+=(new Spell(s))
