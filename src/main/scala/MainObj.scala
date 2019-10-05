@@ -19,16 +19,15 @@ object MainObj extends  App {
 
   @throws(classOf[Exception])
   def levelSTR_toArray(arg:Array[String])={
-    var list_levels = new ListBuffer[(String, Integer)]
     var current_string:String = new String("")
     var current_num:Integer = 0
-    for(i <- arg.indices){
+    val list_levels = arg.map(current => {
       try{
-        current_num = Integer.parseInt(arg(i))
+        current_num = Integer.parseInt(current)
       }catch {
         case exception: Exception => {
           if(current_string==""){
-            current_string = new String(arg(i))
+            current_string = new String(current)
           }else{
             throw new Exception("error in input : two string level in a row")
           }
@@ -36,12 +35,14 @@ object MainObj extends  App {
       }finally {
         if(current_string != "" && current_num != 0){
           var current_spell:(String,Integer) = new Tuple2[String,Integer](current_string,current_num)
-          list_levels+=current_spell
           current_string = ""
           current_num=0
+          current_spell
         }
       }
-    }
+
+    })
+    var test = 0
     list_levels
   }
 
