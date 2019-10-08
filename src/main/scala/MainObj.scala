@@ -12,14 +12,16 @@ object MainObj extends  App {
   val sc = new SparkContext(conf)
   sc.setLogLevel("ERROR")
 
-  val listSpells = get_n_spells(2,7)
+  val listSpells = get_n_spells(50,1)
 
-  val tuple2_list = get_tuple2array_from_spells()       // convert full strings for levels to Tuple2(class:String,num:Integer)
+  val tuple3_list = get_tuple3array_from_spells()       // convert full strings for levels to Tuple2(class:String,num:Integer)
   var reduced_array = filter_spells(1,"(W|w)izard") // remove spells under level "max_lvl" and not from class "class_str"
   var collected = reduced_array.collect()
 
+  var test = 50
+
   def filter_spells(max_lvl:Integer,class_str:String)={
-    sc.makeRDD(tuple2_list).filter(current_spell => {
+    sc.makeRDD(tuple3_list).filter(current_spell => {
       val pattern = new Regex(class_str)
       var lvl_ok = false
       var class_ok = false
@@ -32,17 +34,17 @@ object MainObj extends  App {
     })
   }
 
-  def get_tuple2array_from_spells()={
+  def get_tuple3array_from_spells()={
     listSpells.toArray.map(current_spell => {
-      levelSTR_toArray(current_spell.level.split(" |, "))
+      levelSTR_toArray(current_spell.level.split(" |, "),current_spell.spell_ID)
     })
   }
 
   @throws(classOf[Exception])
-  def levelSTR_toArray(arg:Array[String])={
-    var list_levels = new ListBuffer[(String, Integer)]
+  def levelSTR_toArray(arg:Array[String],spell_ID:Integer)={
+    var list_levels = new ListBuffer[(String, Integer,Integer)]
     var current_string:String = new String("")
-    var current_num:Integer = 0
+    var current_num:Integer = -1
     for(i <- arg.indices){
       try{
         current_num = Integer.parseInt(arg(i))
@@ -51,15 +53,15 @@ object MainObj extends  App {
           if(current_string==""){
             current_string = new String(arg(i))
           }else{
-            throw new Exception("error in input : two string level in a row")
+            throw new Exception("error in input n°"+i+" : two string level in a row")
           }
 
       }finally {
-        if(current_string != "" && current_num != 0){
-          var current_spell:(String,Integer) = new Tuple2[String,Integer](current_string,current_num)
+        if(current_string != "" && current_num != -1){
+          var current_spell:(String,Integer,Integer) = new Tuple3[String,Integer,Integer](current_string,current_num,spell_ID)
           list_levels+=current_spell
           current_string = ""
-          current_num=0
+          current_num = -1
         }
       }
     }
@@ -72,13 +74,13 @@ object MainObj extends  App {
     for(i <- 0 until n ){
       var html = Source.fromURL(url_base+(first_id+i))
       var s = html.mkString
-      listSpells+=new Spell(s,i)
+      listSpells+=new Spell(s,(first_id+i))
     }
     listSpells
   }
 }
 
-class Spell(spellString:String, spellID:Integer, var content:String = "none", var name: String = "none",
+class Spell(spellString:String, spellID_arg:Integer,var spell_ID:Integer = 0, var content:String = "none", var name: String = "none",
             var level:String = "none", var component: String = "none",
             var description:String = "none") {
 
@@ -95,7 +97,7 @@ class Spell(spellString:String, spellID:Integer, var content:String = "none", va
   }
 
   def get_level(): String ={
-    level = content.substring(content.indexOf("Level")+10,content.lastIndexOf("Casting")-55)
+    level = content.substring(content.indexOf("Level")+10,content.lastIndexOf(">Casting")-54)
     level
   }
 
@@ -115,5 +117,7 @@ class Spell(spellString:String, spellID:Integer, var content:String = "none", va
     level = get_level()
     component = get_component()
     description = get_description()
+    spell_ID = spellID_arg
+
   }
 }
