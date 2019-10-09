@@ -1,10 +1,6 @@
-import org.apache.spark
-import org.apache.spark.sql._
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.functions._
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
-
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -18,117 +14,80 @@ object MainObj extends  App {
   val sc = new SparkContext(conf)
   sc.setLogLevel("ERROR")
 
-  val listSpells = get_n_spells(11,1)
+  val listSpells = get_n_spells(10,700)
 
-  val tuple3_list = get_tuple3array_from_spells()       // convert full strings for levels to Tuple2(class:String,num:Integer)
-  //var reduced_array = filter_spells(1,"(W|w)izard") // remove spells under level "max_lvl" and not from class "class_str"
-  //var collected = reduced_array.collect()
+  var component_filtered_tuples = listSpells.filter(current_spell => {
+    if(current_spell._4 == "V"){
+      var levels = current_spell._2.split(" |, ")
+      true
+    }else{false}
+  })
 
-  var testsql = createSQLdb(tuple3_list)
+  var sqltest = createSQLdb(listSpells)
 
   var test = 50
 
-  // Pour l'instant le résultat du select affiche les 11 arrays stockés dans le RDD, pas possible de déballer les array en SQL
-  // Il faut créer une autre structure de données à partir de tuple3 pour pouvoir recréer un map qui sera bien interprété en SQL pour des commandes
-  def createSQLdb(tuple3: Array[ListBuffer[(String, Integer, Integer)]]): Unit ={
+  // Fonction pour table SQL des spells
+  def createSQLdb(listSpells:ListBuffer[(Integer,String, String, String)]): Unit ={
 
+    // Initialisation de session SQL
     val sqlContext = new org.apache.spark.sql.SQLContext(sc)
-    val spark = SparkSession
-      .builder()
-      .getOrCreate()
+    val sparksql = SparkSession.builder().getOrCreate()
     import sqlContext.implicits._
 
+    // Conversion de liste des spells en RDD et conversion du RDD en DataFrame pour SQL
+    val listSpellsRDD = sc.makeRDD(listSpells)
+    val spellsDF = listSpellsRDD.toDF()
 
-    /*for(j <- 1 until 10) {
-      for(i <- tuple3(j).indices){
-        var current_classlvl = tuple3(j)(i)._1
-        var current_lvl = tuple3(j)(i)._2
-        var current_id = tuple3(j)(i)._3
-        var current_spell = 0
-      }
-    }*/
-
-    var tuple3RDD = sc.makeRDD(tuple3)
-    val spellsDF = tuple3RDD.toDF()
-
-    // Création de la vue SQL SPELL
+    // Création et affichage de la vue SQL SPELL
     spellsDF.createOrReplaceTempView("SPELL")
-    val spellsaffichDF = spark.sql("SELECT * FROM SPELL")
+    val spellsaffichDF = sparksql.sql("SELECT * FROM SPELL")
     spellsaffichDF.show()
-    // Pour l'instant le résultat du select affiche les 11 arrays stockés dans le RDD, pas possible de déballer les array en SQL
 
-    /*for(j <- 1 until 10) {
-      for(i <- tuple3(j).indices){
-        var current_classlvl = tuple3(j)(i)._1
-        var current_lvl = tuple3(j)(i)._2
-        var current_id = tuple3(j)(i)._3
-        var current_spell = 0
-      }
-    }*/
+    // Reste à renommer les colonnes (attributs) et faire requete SELECT
 
-
-    test=0
+    val testaffichsqldebug=0
   }
 
 
-
-  def filter_spells(max_lvl:Integer,class_str:String)={
-    sc.makeRDD(tuple3_list).filter(current_spell => {
-      val pattern = new Regex(class_str)
-      var lvl_ok = false
-      var class_ok = false
-      for(i <- current_spell.indices){
-        if(current_spell(i)._2 <= max_lvl){lvl_ok = true}
-        if( pattern.findAllMatchIn(current_spell(i)._1).toString == "non-empty iterator" ){class_ok=true}
-      }
-      var result = lvl_ok&&class_ok
-      result
-    })
-  }
-
-  def get_tuple3array_from_spells()={
-    listSpells.toArray.map(current_spell => {
-      levelSTR_toArray(current_spell.level.split(" |, "),current_spell.spell_ID)
-    })
-  }
 
   @throws(classOf[Exception])
-  def levelSTR_toArray(arg:Array[String],spell_ID:Integer)={
-    var list_levels = new ListBuffer[(String, Integer,Integer)]
+  def levelsArray_to_tuples(arg:Array[String])={
+    var list_levels = new ListBuffer[(Integer,String,String,String)]
     var current_string:String = new String("")
     var current_num:Integer = -1
     for(i <- arg.indices){
-      try{
+      try {
         current_num = Integer.parseInt(arg(i))
-      }catch {
+      } catch {
         case exception: Exception =>
-          if(current_string==""){
+          if (current_string == "") {
             current_string = new String(arg(i))
-          }else{
-            throw new Exception("error in input n°"+i+" : two string level in a row")
+          } else {
+            throw new Exception("error in input n°" + i + " : two string level in a row")
           }
-
-      }finally {
-        if(current_string != "" && current_num != -1){
-          var current_spell:(String,Integer,Integer) = new Tuple3[String,Integer,Integer](current_string,current_num,spell_ID)
-          list_levels+=current_spell
-          current_string = ""
-          current_num = -1
-        }
       }
+
+      /*if(current_string != "" && current_num != -1){
+        var current_spell:(String,Integer) = new Tuple2[String,Integer](current_string,current_num)
+        list_levels += current_spell
+        current_string = ""
+        current_num = -1
+      } */
     }
     list_levels
   }
 
   def get_n_spells(n:Integer,first_id:Integer)={
-    var listSpells = new ListBuffer[Spell]
+    var listSpells = new ListBuffer[(Integer,String,String,String)]
     val url_base = "http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID="
     for(i <- 0 until n ){
       var html = Source.fromURL(url_base+(first_id+i))
       var s = html.mkString
-      listSpells+=new Spell(s,(first_id+i))
-      var spellencours= first_id+i
-      println("i : " + spellencours) // Temps réel de la récupération des sorts
+      var spell = new Spell(s,(first_id+i))
+      var spell_ID= first_id+i
+      listSpells += new Tuple4[Integer, String, String, String](spell_ID, spell.name, spell.level, spell.component )
+      println("i : " + spell_ID) // Temps réel de la récupération des sorts
     }
     listSpells
   }
