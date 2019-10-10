@@ -13,50 +13,25 @@ object MainObj extends  App {
   val sc = new SparkContext(conf)
   sc.setLogLevel("ERROR")
 
-  var time_debut = System.currentTimeMillis()
+  val listSpells = get_n_spells(1970,1)
 
-  val listSpells = get_n_spells(500,700)
+  // spell structure : Tuple4(ID, name, level, component)
 
-  var tuples = listSpells.map(current => {
-    var tuple = new Tuple4[Integer,String,String,String](current.spell_ID,current.name,current.level,current.component)
-    tuple
-  })
+  var target_component = "V"
+  var target_class_regex ="(W|w)izard"
+  var target_level = 4
 
-  var component_filtered_tuples = tuples.filter(current_spell => {
-    if(current_spell._4 == "V"){
-      var levels = current_spell._2.split(" |, ")
-      true
-    }else{false}
+  var filtered_tuples = listSpells.filter(current_spell => {
+    var result = false
+    if(current_spell._4 == target_component){
+      if(new Regex(target_class_regex+" [0-"+target_level+"]").findAllMatchIn(current_spell._3).toString() == "non-empty iterator"){
+        result = true
+      }
+    }
+    result
   })
 
   var test = 50
-
-  @throws(classOf[Exception])
-  def levelsArray_to_tuples(arg:Array[String])={
-    var list_levels = new ListBuffer[(Integer,String,String,String)]
-    var current_string:String = new String("")
-    var current_num:Integer = -1
-    for(i <- arg.indices){
-      try {
-        current_num = Integer.parseInt(arg(i))
-      } catch {
-        case exception: Exception =>
-          if (current_string == "") {
-            current_string = new String(arg(i))
-          } else {
-            throw new Exception("error in input n°" + i + " : two string level in a row")
-          }
-      }
-
-      if(current_string != "" && current_num != -1){
-        var current_spell:(String,Integer) = new Tuple2[String,Integer](current_string,current_num)
-        list_levels += current_spell
-        current_string = ""
-        current_num = -1
-      }
-    }
-    list_levels
-  }
 
   def get_n_spells(n:Integer,first_id:Integer)={
     var listSpells = new ListBuffer[(Integer,String,String,String)]
