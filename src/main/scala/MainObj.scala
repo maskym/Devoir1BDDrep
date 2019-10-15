@@ -1,7 +1,9 @@
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
-
+import org.apache.spark.sql._
+import org.apache.spark.sql.types._
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.matching.Regex
@@ -37,14 +39,14 @@ object MainObj extends  App {
 
     // Conversion de liste des spells en RDD et conversion du RDD en DataFrame pour SQL
     val listSpellsRDD = sc.makeRDD(listSpells)
-    val spellsDF = listSpellsRDD.toDF()
+    val spellsDF = listSpellsRDD.toDF("id","name","level","component")
 
     // Création et affichage de la vue SQL SPELL
     spellsDF.createOrReplaceTempView("SPELL")
     val spellsaffichDF = sparksql.sql("SELECT * FROM SPELL")
     spellsaffichDF.show()
 
-    // Reste à renommer les colonnes (attributs) et faire requete SELECT
+    // Reste à faire requete SELECT pour afficher spells sorcier =<4 et component V
 
     val testaffichsqldebug=0
   }
