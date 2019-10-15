@@ -16,7 +16,7 @@ object MainObj extends  App {
   val sc = new SparkContext(conf)
   sc.setLogLevel("ERROR")
 
-  val listSpells = get_n_spells(10,700)
+  val listSpells = get_n_spells(1975,1)
 
   var component_filtered_tuples = listSpells.filter(current_spell => {
     if(current_spell._4 == "V"){
@@ -43,10 +43,8 @@ object MainObj extends  App {
 
     // Création et affichage de la vue SQL SPELL
     spellsDF.createOrReplaceTempView("SPELL")
-    val spellsaffichDF = sparksql.sql("SELECT * FROM SPELL")
-    spellsaffichDF.show()
-
-    // Reste à faire requete SELECT pour afficher spells sorcier =<4 et component V
+    val spellsaffichDF = sparksql.sql("""SELECT * FROM SPELL WHERE component='V' AND (level LIKE '%wizard 0%' OR level LIKE '%wizard 1%' OR level LIKE '%wizard 2%' OR level LIKE '%wizard 3%' OR level LIKE '%wizard 4%')""")
+    spellsaffichDF.show(200,false)
 
     val testaffichsqldebug=0
   }
@@ -82,9 +80,10 @@ object MainObj extends  App {
 
   def get_n_spells(n:Integer,first_id:Integer)={
     var listSpells = new ListBuffer[(Integer,String,String,String)]
-    val url_base = "http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID="
+    val url_base = "file:///C:/output/spell_"
+    var url_end = ".html"
     for(i <- 0 until n ){
-      var html = Source.fromURL(url_base+(first_id+i))
+      var html = Source.fromURL(url_base+(first_id+i)+url_end)
       var s = html.mkString
       var spell = new Spell(s,(first_id+i))
       var spell_ID= first_id+i
