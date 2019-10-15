@@ -13,7 +13,10 @@ object MainObj extends  App {
   val sc = new SparkContext(conf)
   sc.setLogLevel("ERROR")
 
-  val listSpells = get_n_spells(1970,1)
+  var first_id = 1
+  var num_spells = 1975
+
+  val listSpells = get_n_spells(num_spells,first_id)
 
   // spell structure : Tuple4(ID, name, level, component)
 
@@ -31,18 +34,24 @@ object MainObj extends  App {
     result
   })
 
-  var test = 50
+  display_listBuffer(filtered_tuples)
+
+  def display_listBuffer(arg:ListBuffer[(Integer,String,String,String)]): Unit ={
+    for(i <- arg.indices){
+      println(arg(i).toString)
+    }
+  }
 
   def get_n_spells(n:Integer,first_id:Integer)={
     var listSpells = new ListBuffer[(Integer,String,String,String)]
-    val url_base = "http://www.dxcontent.com/SDB_SpellBlock.asp?SDBID="
+    val url_base = "file:///C:/Users/maxim/AppData/Local/Packages/CanonicalGroupLimited.Ubuntu18.04onWindows_79rhkp1fndgsc/LocalState/rootfs/home/maxime/script_bddrep/output/spell_"
+    var url_end = ".html"
     for(i <- 0 until n ){
-      var html = Source.fromURL(url_base+(first_id+i))
+      var html = Source.fromURL(url_base+(first_id+i)+url_end)
       var s = html.mkString
-      var spell = new Spell(s,(first_id+i))
+      var spell = new Spell(s, first_id+i)
       var spell_ID= first_id+i
       listSpells += new Tuple4[Integer, String, String, String](spell_ID, spell.name, spell.level, spell.component )
-      println("i : " + spell_ID) // Temps réel de la récupération des sorts
     }
     listSpells
   }
@@ -65,7 +74,7 @@ class Spell(spellString:String, spellID_arg:Integer,var spell_ID:Integer = 0, va
   }
 
   def get_level(): String ={
-    var substringed = content.substring(content.indexOf("Level")+10);
+    var substringed = content.substring(content.indexOf("Level")+10)
     level = substringed.substring(0,substringed.indexOf("</p>"))
     level
   }
