@@ -1,12 +1,7 @@
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql._
-import org.apache.spark.sql.types._
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
-import scala.util.matching.Regex
 
 
 object MainObj extends  App {
@@ -17,17 +12,7 @@ object MainObj extends  App {
   sc.setLogLevel("ERROR")
 
   val listSpells = get_n_spells(1975,1)
-
-  var component_filtered_tuples = listSpells.filter(current_spell => {
-    if(current_spell._4 == "V"){
-      var levels = current_spell._2.split(" |, ")
-      true
-    }else{false}
-  })
-
   var sqltest = createSQLdb(listSpells)
-
-  var test = 50
 
   // Fonction pour table SQL des spells
   def createSQLdb(listSpells:ListBuffer[(Integer,String, String, String)]): Unit ={
@@ -45,37 +30,6 @@ object MainObj extends  App {
     spellsDF.createOrReplaceTempView("SPELL")
     val spellsaffichDF = sparksql.sql("""SELECT * FROM SPELL WHERE component='V' AND (level LIKE '%wizard 0%' OR level LIKE '%wizard 1%' OR level LIKE '%wizard 2%' OR level LIKE '%wizard 3%' OR level LIKE '%wizard 4%')""")
     spellsaffichDF.show(200,false)
-
-    val testaffichsqldebug=0
-  }
-
-
-
-  @throws(classOf[Exception])
-  def levelsArray_to_tuples(arg:Array[String])={
-    var list_levels = new ListBuffer[(Integer,String,String,String)]
-    var current_string:String = new String("")
-    var current_num:Integer = -1
-    for(i <- arg.indices){
-      try {
-        current_num = Integer.parseInt(arg(i))
-      } catch {
-        case exception: Exception =>
-          if (current_string == "") {
-            current_string = new String(arg(i))
-          } else {
-            throw new Exception("error in input n°" + i + " : two string level in a row")
-          }
-      }
-
-      /*if(current_string != "" && current_num != -1){
-        var current_spell:(String,Integer) = new Tuple2[String,Integer](current_string,current_num)
-        list_levels += current_spell
-        current_string = ""
-        current_num = -1
-      } */
-    }
-    list_levels
   }
 
   def get_n_spells(n:Integer,first_id:Integer)={
@@ -85,10 +39,9 @@ object MainObj extends  App {
     for(i <- 0 until n ){
       var html = Source.fromURL(url_base+(first_id+i)+url_end)
       var s = html.mkString
-      var spell = new Spell(s,(first_id+i))
+      var spell = new Spell(s, first_id+i)
       var spell_ID= first_id+i
       listSpells += new Tuple4[Integer, String, String, String](spell_ID, spell.name, spell.level, spell.component )
-      println("i : " + spell_ID) // Temps réel de la récupération des sorts
     }
     listSpells
   }
