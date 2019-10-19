@@ -1,4 +1,3 @@
-import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
@@ -34,7 +33,9 @@ object MainObj extends  App {
     result
   })
 
+  println("\n\n=======================================")
   display_listBuffer(filtered_tuples)
+  println("Number of filtered tuples : "+filtered_tuples.length)
 
   def display_listBuffer(arg:ListBuffer[(Integer,String,String,String)]): Unit ={
     for(i <- arg.indices){
@@ -44,7 +45,7 @@ object MainObj extends  App {
 
   def get_n_spells(n:Integer,first_id:Integer)={
     var listSpells = new ListBuffer[(Integer,String,String,String)]
-    val url_base = "file:///C:/Users/maxim/AppData/Local/Packages/CanonicalGroupLimited.Ubuntu18.04onWindows_79rhkp1fndgsc/LocalState/rootfs/home/maxime/script_bddrep/output/spell_"
+    val url_base = "file:///C:/Users/maxim/IdeaProjects/Devoir1BDDrep/output/spell_"
     var url_end = ".html"
     for(i <- 0 until n ){
       var html = Source.fromURL(url_base+(first_id+i)+url_end)
